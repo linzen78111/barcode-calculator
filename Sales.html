@@ -217,7 +217,7 @@
         `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
 
       JsBarcode("#barcode", fullBarcode, {
-        format: "CODE128",
+        format: "ean13",
         lineColor: "#000",
         width: 2,
         height: 80,
