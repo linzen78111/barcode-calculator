@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>條碼折扣計算器</title>
+  <title>i珍食折扣條碼計算器</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,16 +15,15 @@
     }
     h2 {
       text-align: center;
-      margin-bottom: 20px;
     }
     label {
       display: block;
       margin: 12px 0 6px;
-      font-weight: 600;
+      font-weight: bold;
     }
-    input, select {
+    input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px;
       font-size: 1.1em;
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -53,54 +52,96 @@
       white-space: pre-wrap;
       font-size: 1.1em;
     }
+    .mode-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .mode-buttons button {
+      flex: 1;
+      background-color: #ccc;
+      color: #000;
+    }
+    .mode-buttons button.active {
+      background-color: #007aff;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
-  <h2>條碼折扣計算器</h2>
+  <h2>i珍食折扣條碼計算器</h2>
 
-  <label for="mode">模式</label>
-  <select id="mode">
-    <option value="補登">補登（+99）</option>
-    <option value="提前">提前結帳（+99 × 天數差）</option>
-  </select>
+  <div class="mode-buttons">
+    <button id="modeBtn1" class="active" onclick="setMode('補登')">補登模式</button>
+    <button id="modeBtn2" onclick="setMode('提前')">提前結帳</button>
+  </div>
 
-  <label for="baseBarcode">原始條碼末五碼</label>
-  <input type="number" id="baseBarcode" value="12345" />
+  <label for="barcode">條碼末五碼（數字）</label>
+  <input type="number" id="barcode" value="12345" />
 
-  <label for="原始日期">條碼所屬日期（例如：6/3 輸入 3）</label>
-  <input type="number" id="baseDate" value="3" />
+  <label for="month1">原始月份</label>
+  <input type="number" id="month1" value="5" />
 
-  <label for="實際日期">實際結帳日期（例如：5/30 輸入 30）</label>
-  <input type="number" id="checkoutDate" value="30" />
+  <label for="day1">原始日期</label>
+  <input type="number" id="day1" value="23" />
+
+  <label for="month2">結帳月份</label>
+  <input type="number" id="month2" value="5" />
+
+  <label for="day2">結帳日期</label>
+  <input type="number" id="day2" value="24" />
+
+  <label for="checkoutBarcode">結帳條碼（提前模式時輸入，末五碼）</label>
+  <input type="number" id="checkoutBarcode" value="13000" />
 
   <button onclick="calculate()">計算</button>
 
   <div id="result"></div>
 
   <script>
+    let mode = "補登";
+
+    function setMode(selectedMode) {
+      mode = selectedMode;
+      document.getElementById("modeBtn1").classList.remove("active");
+      document.getElementById("modeBtn2").classList.remove("active");
+      if (selectedMode === "補登") {
+        document.getElementById("modeBtn1").classList.add("active");
+      } else {
+        document.getElementById("modeBtn2").classList.add("active");
+      }
+    }
+
     function calculate() {
-      const mode = document.getElementById('mode').value;
-      const baseBarcode = Number(document.getElementById('baseBarcode').value);
-      const baseDate = Number(document.getElementById('baseDate').value);
-      const checkoutDate = Number(document.getElementById('checkoutDate').value);
+      const barcode = Number(document.getElementById('barcode').value);
+      const month1 = Number(document.getElementById('month1').value);
+      const day1 = Number(document.getElementById('day1').value);
+      const month2 = Number(document.getElementById('month2').value);
+      const day2 = Number(document.getElementById('day2').value);
+      const checkoutBarcode = Number(document.getElementById('checkoutBarcode').value);
 
-      const dayDiff = checkoutDate - baseDate;
+      const date1 = new Date(2025, month1 - 1, day1);
+      const date2 = new Date(2025, month2 - 1, day2);
+      const diffDays = Math.floor((date2 - date1) / (1000 * 60 * 60 * 24));
 
-      let result = '';
+      let resultText = '';
 
-      if (mode === '補登') {
-        const newBarcode = baseBarcode + 99;
-        result = `✅ 補登模式\n➡️ 新條碼末五碼：${newBarcode}`;
-      } else if (mode === '提前') {
-        if (dayDiff <= 0) {
-          result = '❗ 實際結帳日需晚於條碼所屬日期';
+      if (mode === "補登") {
+        if (diffDays < 0) {
+          resultText = '❗ 結帳日期不得早於原始日期';
         } else {
-          const newBarcode = baseBarcode + 99 * (dayDiff - 1);
-          result = `✅ 提前結帳模式\n➡️ 新條碼末五碼：${newBarcode}`;
+          const 補Barcode = barcode + 99;
+          resultText = `🔁 模式：補登\n✅ 補登條碼：${補Barcode}`;
+        }
+      } else if (mode === "提前") {
+        if (diffDays < 1) {
+          resultText = '❗ 結帳日期必須早於條碼日期';
+        } else {
+          const adjusted = checkoutBarcode - 99 * (diffDays - 1);
+          resultText = `🔁 模式：提前結帳\n📦 折扣條碼：${adjusted}`;
         }
       }
 
-      document.getElementById('result').innerText = result;
+      document.getElementById("result").innerText = resultText;
     }
   </script>
 </body>
