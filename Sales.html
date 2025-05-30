@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>i珍食折扣條碼計算器</title>
+  <title>i珍食折扣條碼計算機</title>
   <!-- 1. 引入 JSBarcode 函式庫（用來動態產生條碼圖） -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
@@ -80,22 +80,22 @@
   <!-- 3. 補登模式 UI -->
   <div id="buMode">
     <label>前 8 碼商品身份碼</label>
-    <input id="bu_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="26144498">
+    <input id="bu_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="">
 
     <label>原始條碼末五碼</label>
-    <input id="bu_barcode" type="number" value="15439">
+    <input id="bu_barcode" type="number" value="">
 
     <label>原始月份</label>
-    <input id="bu_month1" type="number" value="5" min="1" max="12">
+    <input id="bu_month1" type="number" value="" min="1" max="12">
 
     <label>原始日期</label>
-    <input id="bu_day1" type="number" value="23" min="1" max="31">
+    <input id="bu_day1" type="number" value="" min="1" max="31">
 
     <label>補登月份</label>
-    <input id="bu_month2" type="number" value="5" min="1" max="12">
+    <input id="bu_month2" type="number" value="" min="1" max="12">
 
     <label>補登日期</label>
-    <input id="bu_day2" type="number" value="24" min="1" max="31">
+    <input id="bu_day2" type="number" value="" min="1" max="31">
 
     <button onclick="calculateBu()">計算補登條碼</button>
   </div>
@@ -103,22 +103,22 @@
   <!-- 4. 提前結帳模式 UI -->
   <div id="tiMode" class="hidden">
     <label>前 8 碼商品身份碼</label>
-    <input id="ti_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="26144498">
+    <input id="ti_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="">
 
     <label>條碼末五碼 (來源：未來日期條碼)</label>
-    <input id="ti_barcode" type="number" value="15636">
+    <input id="ti_barcode" type="number" value="">
 
     <label>商品月份</label>
-    <input id="ti_month1" type="number" value="6" min="1" max="12">
+    <input id="ti_month1" type="number" value="" min="1" max="12">
 
     <label>商品日期</label>
-    <input id="ti_day1" type="number" value="1" min="1" max="31">
+    <input id="ti_day1" type="number" value="" min="1" max="31">
 
     <label>結帳月份</label>
-    <input id="ti_month2" type="number" value="5" min="1" max="12">
+    <input id="ti_month2" type="number" value="" min="1" max="12">
 
     <label>結帳日期</label>
-    <input id="ti_day2" type="number" value="30" min="1" max="31">
+    <input id="ti_day2" type="number" value="" min="1" max="31">
 
     <button onclick="calculateTi()">計算折扣條碼</button>
   </div>
