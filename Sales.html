@@ -1,147 +1,172 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>i珍食折扣條碼計算器</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 480px;
-      margin: 20px auto;
-      padding: 0 15px;
+      font-family: 'Segoe UI', sans-serif;
       background: #f5f5f7;
-      color: #222;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      color: #333;
     }
     h2 {
       text-align: center;
+      margin-bottom: 10px;
+    }
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .active {
+      background-color: #007aff;
+      color: white;
+    }
+    .hidden {
+      display: none;
     }
     label {
+      font-weight: 600;
+      margin-top: 10px;
       display: block;
-      margin: 12px 0 6px;
-      font-weight: bold;
     }
     input {
       width: 100%;
       padding: 10px;
       font-size: 1.1em;
+      margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 6px;
       box-sizing: border-box;
     }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 14px;
-      font-size: 1.2em;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:active {
-      background-color: #005bb5;
-    }
     #result {
-      margin-top: 25px;
+      background: white;
+      margin-top: 20px;
       padding: 15px;
-      background: #fff;
       border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      white-space: pre-wrap;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
       font-size: 1.1em;
-    }
-    .mode-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .mode-buttons button {
-      flex: 1;
-      background-color: #ccc;
-      color: #000;
-    }
-    .mode-buttons button.active {
-      background-color: #007aff;
-      color: #fff;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
   <h2>i珍食折扣條碼計算器</h2>
 
-  <div class="mode-buttons">
-    <button id="modeBtn1" class="active" onclick="setMode('補登')">補登模式</button>
-    <button id="modeBtn2" onclick="setMode('提前')">提前結帳</button>
+  <div class="mode-toggle">
+    <button id="mode-bu" class="active" onclick="switchMode('bu')">補登模式</button>
+    <button id="mode-ti" onclick="switchMode('ti')">提前結帳</button>
   </div>
 
-  <label for="barcode">條碼末五碼（補登專用）</label>
-  <input type="number" id="barcode" value="12345" />
+  <!-- 補登模式 -->
+  <div id="buMode">
+    <label>原始條碼末五碼</label>
+    <input id="bu_barcode" type="number" value="12345">
 
-  <label for="month1">結帳月份</label>
-  <input type="number" id="month1" value="5" />
+    <label>原始月份</label>
+    <input id="bu_month1" type="number" value="5">
 
-  <label for="day1">結帳日期</label>
-  <input type="number" id="day1" value="23" />
+    <label>原始日期</label>
+    <input id="bu_day1" type="number" value="23">
 
-  <label for="month2">原始月份</label>
-  <input type="number" id="month2" value="5" />
+    <label>補登月份</label>
+    <input id="bu_month2" type="number" value="5">
 
-  <label for="day2">原始日期</label>
-  <input type="number" id="day2" value="24" />
+    <label>補登日期</label>
+    <input id="bu_day2" type="number" value="24">
 
-  <label for="checkoutBarcode">結帳條碼（提前專用）</label>
-  <input type="number" id="checkoutBarcode" value="13000" />
+    <button onclick="calculateBu()">計算補登條碼</button>
+  </div>
 
-  <button onclick="calculate()">計算</button>
+  <!-- 提前模式 -->
+  <div id="tiMode" class="hidden">
+    <label>條碼末五碼</label>
+    <input id="ti_barcode" type="number" value="13000">
+
+    <label>條碼月份</label>
+    <input id="ti_month1" type="number" value="6">
+
+    <label>條碼日期</label>
+    <input id="ti_day1" type="number" value="3">
+
+    <label>結帳月份</label>
+    <input id="ti_month2" type="number" value="5">
+
+    <label>結帳日期</label>
+    <input id="ti_day2" type="number" value="30">
+
+    <button onclick="calculateTi()">計算折扣條碼</button>
+  </div>
 
   <div id="result"></div>
 
   <script>
-    let mode = "補登";
+    function switchMode(mode) {
+      document.getElementById('buMode').classList.add('hidden');
+      document.getElementById('tiMode').classList.add('hidden');
+      document.getElementById('mode-bu').classList.remove('active');
+      document.getElementById('mode-ti').classList.remove('active');
 
-    function setMode(selectedMode) {
-      mode = selectedMode;
-      document.getElementById("modeBtn1").classList.remove("active");
-      document.getElementById("modeBtn2").classList.remove("active");
-      if (selectedMode === "補登") {
-        document.getElementById("modeBtn1").classList.add("active");
+      if (mode === 'bu') {
+        document.getElementById('buMode').classList.remove('hidden');
+        document.getElementById('mode-bu').classList.add('active');
       } else {
-        document.getElementById("modeBtn2").classList.add("active");
+        document.getElementById('tiMode').classList.remove('hidden');
+        document.getElementById('mode-ti').classList.add('active');
       }
+      document.getElementById('result').innerText = '';
     }
 
-    function calculate() {
-      const barcode = Number(document.getElementById('barcode').value);
-      const month1 = Number(document.getElementById('month1').value);
-      const day1 = Number(document.getElementById('day1').value);
-      const month2 = Number(document.getElementById('month2').value);
-      const day2 = Number(document.getElementById('day2').value);
-      const checkoutBarcode = Number(document.getElementById('checkoutBarcode').value);
+    function calculateDayDiff(month1, day1, month2, day2) {
+      const total1 = month1 * 31 + day1;
+      const total2 = month2 * 31 + day2;
+      return total2 - total1;
+    }
 
-      const date1 = new Date(2025, month1 - 1, day1);
-      const date2 = new Date(2025, month2 - 1, day2);
-      const diffDays = Math.floor((date2 - date1) / (1000 * 60 * 60 * 24));
+    function calculateBu() {
+      const base = Number(document.getElementById('bu_barcode').value);
+      const m1 = Number(document.getElementById('bu_month1').value);
+      const d1 = Number(document.getElementById('bu_day1').value);
+      const m2 = Number(document.getElementById('bu_month2').value);
+      const d2 = Number(document.getElementById('bu_day2').value);
 
-      let resultText = '';
-
-      if (mode === "補登") {
-        if (diffDays < 0) {
-          resultText = '❗ 結帳日期不得早於原始日期';
-        } else {
-          const 補Barcode = barcode + 99;
-          resultText = `🔁 模式：補登\n✅ 補登條碼：${補Barcode}`;
-        }
-      } else if (mode === "提前") {
-        if (diffDays < 1) {
-          resultText = '❗ 結帳日期必須早於條碼日期';
-        } else {
-          const adjusted = checkoutBarcode - 99 * (diffDays - 1);
-          resultText = `🔁 模式：提前結帳\n📦 折扣條碼：${adjusted}`;
-        }
+      const diff = calculateDayDiff(m1, d1, m2, d2);
+      if (diff < 0) {
+        document.getElementById('result').innerText = '❗ 補登日期必須晚於原始日期';
+        return;
       }
 
-      document.getElementById("result").innerText = resultText;
+      const result = base + 99;
+      document.getElementById('result').innerText = `✅ 補登條碼：${result}`;
+    }
+
+    function calculateTi() {
+      const base = Number(document.getElementById('ti_barcode').value);
+      const m1 = Number(document.getElementById('ti_month1').value);
+      const d1 = Number(document.getElementById('ti_day1').value);
+      const m2 = Number(document.getElementById('ti_month2').value);
+      const d2 = Number(document.getElementById('ti_day2').value);
+
+      const diff = calculateDayDiff(m2, d2, m1, d1); // 日期要反過來算
+      if (diff < 0) {
+        document.getElementById('result').innerText = '❗ 結帳日期必須早於條碼日期';
+        return;
+      }
+
+      const result = base - 99 * (diff - 1);
+      document.getElementById('result').innerText = `📦 折扣條碼：${result}`;
     }
   </script>
 </body>
