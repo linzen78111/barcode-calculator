@@ -120,6 +120,13 @@
     <label>結帳日期</label>
     <input id="ti_day2" type="number" value="" min="1" max="31">
 
+    <label>日界線</label>
+    <div class="mode-toggle" id="cutoff-toggle">
+      <button type="button" id="cutoff-0" onclick="setCutoff(0)">00:00</button>
+      <button type="button" id="cutoff-3" class="active" onclick="setCutoff(3)">03:00</button>
+    </div>
+    <input type="hidden" id="ti_cutoff" value="3">
+
     <button onclick="calculateTi()">計算折扣條碼</button>
   </div>
 
@@ -155,8 +162,14 @@
     function calculateDayDiff(year, monthA, dayA, monthB, dayB) {
       const dateA = new Date(year, monthA - 1, dayA);
       const dateB = new Date(year, monthB - 1, dayB);
-      // dateA = 基準日期，dateB = 目標日期，用 dateB - dateA
-      return Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
+      const diff = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
+      console.log('日期計算：', {
+        dateA: dateA.toISOString(),
+        dateB: dateB.toISOString(),
+        diff: diff,
+        monthA, dayA, monthB, dayB
+      });
+      return diff;
     }
 
     // 補登模式：末五碼 + 99
@@ -201,15 +214,21 @@
       const dA = Number(document.getElementById('ti_day1').value);
       const mB = Number(document.getElementById('ti_month2').value);
       const dB = Number(document.getElementById('ti_day2').value);
+      const cutoff = Number(document.getElementById('ti_cutoff').value); // 取得日界線
 
-      // 計算「條碼所屬日」和「結帳日」之間的天數：dateA=條碼日，dateB=結帳日
-      const diff = calculateDayDiff(2025, mB, dB, mA, dA);
+      // 根據日界線建立日期物件
+      const dateA = new Date(2025, mA - 1, dA, cutoff, 0, 0);
+      const dateB = new Date(2025, mB - 1, dB, cutoff, 0, 0);
+      let diff = Math.round((dateA - dateB) / (1000 * 60 * 60 * 24));
+      diff = Math.abs(diff); // 保證正值
+      if (cutoff === 0) {
+        diff = diff - 1; // 00:00 日界線要再減 1
+      }
       if (diff < 1) {
         document.getElementById('result').innerText = '❗ 結帳日期必須早於條碼日期';
         document.getElementById('barcode').innerHTML = '';
         return;
       }
-      // 計算新的末五碼
       const newFive = five - 99 * (diff - 1);
       const fullBarcode = front8 + String(newFive).padStart(5, '0');
 
@@ -223,6 +242,18 @@
         height: 80,
         displayValue: true
       });
+    }
+
+    // 日界線切換
+    function setCutoff(val) {
+      document.getElementById('ti_cutoff').value = val;
+      document.getElementById('cutoff-0').classList.remove('active');
+      document.getElementById('cutoff-3').classList.remove('active');
+      if (val == 0) {
+        document.getElementById('cutoff-0').classList.add('active');
+      } else {
+        document.getElementById('cutoff-3').classList.add('active');
+      }
     }
   </script>
 </body>
