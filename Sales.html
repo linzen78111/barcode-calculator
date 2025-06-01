@@ -66,9 +66,35 @@
       text-align: center;
       margin-top: 20px;
     }
+    /* 載入動畫樣式 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .loading-text {
+      color: #333;
+      font-size: 1.2em;
+      font-weight: 600;
+      padding: 15px 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
+  <!-- 載入動畫元素 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-text">資料處理中...</div>
+  </div>
   <h2>i珍食折扣條碼計算機</h2>
 
   <!-- 2. 模式切換按鈕 -->
@@ -80,22 +106,29 @@
   <!-- 3. 補登模式 UI -->
   <div id="buMode">
     <label>前 8 碼商品身份碼</label>
-    <input id="bu_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="">
+    <input id="bu_front8" type="text" placeholder="輸入 8 碼商品身份碼" 
+           maxlength="8" pattern="[0-9]*" inputmode="numeric"
+           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 
     <label>原始條碼末五碼</label>
-    <input id="bu_barcode" type="number" value="">
+    <input id="bu_barcode" type="text" maxlength="5" pattern="[0-9]*" inputmode="numeric"
+           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 
     <label>原始月份</label>
-    <input id="bu_month1" type="number" value="" min="1" max="12">
+    <input id="bu_month1" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateMonth(this)" placeholder="1-12">
 
     <label>原始日期</label>
-    <input id="bu_day1" type="number" value="" min="1" max="31">
+    <input id="bu_day1" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateDay(this)" placeholder="1-31">
 
     <label>補登月份</label>
-    <input id="bu_month2" type="number" value="" min="1" max="12">
+    <input id="bu_month2" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateMonth(this)" placeholder="1-12">
 
     <label>補登日期</label>
-    <input id="bu_day2" type="number" value="" min="1" max="31">
+    <input id="bu_day2" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateDay(this)" placeholder="1-31">
 
     <button onclick="calculateBu()">計算補登條碼</button>
   </div>
@@ -103,22 +136,29 @@
   <!-- 4. 提前結帳模式 UI -->
   <div id="tiMode" class="hidden">
     <label>前 8 碼商品身份碼</label>
-    <input id="ti_front8" type="text" placeholder="輸入 8 碼商品身份碼" value="">
+    <input id="ti_front8" type="text" placeholder="輸入 8 碼商品身份碼" 
+           maxlength="8" pattern="[0-9]*" inputmode="numeric"
+           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 
     <label>條碼末五碼 (來源：未來日期條碼)</label>
-    <input id="ti_barcode" type="number" value="">
+    <input id="ti_barcode" type="text" maxlength="5" pattern="[0-9]*" inputmode="numeric"
+           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 
     <label>商品月份</label>
-    <input id="ti_month1" type="number" value="" min="1" max="12">
+    <input id="ti_month1" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateMonth(this)" placeholder="1-12">
 
     <label>商品日期</label>
-    <input id="ti_day1" type="number" value="" min="1" max="31">
+    <input id="ti_day1" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateDay(this)" placeholder="1-31">
 
     <label>結帳月份</label>
-    <input id="ti_month2" type="number" value="" min="1" max="12">
+    <input id="ti_month2" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateMonth(this)" placeholder="1-12">
 
     <label>結帳日期</label>
-    <input id="ti_day2" type="number" value="" min="1" max="31">
+    <input id="ti_day2" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric"
+           oninput="validateDay(this)" placeholder="1-31">
 
     <label>日界線</label>
     <div class="mode-toggle" id="cutoff-toggle">
@@ -139,6 +179,18 @@
   </div>
 
   <script>
+    // 顯示載入動畫
+    function showLoading() {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.display = 'flex';
+    }
+
+    // 隱藏載入動畫
+    function hideLoading() {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.display = 'none';
+    }
+
     // 切換模式（補登 vs 提前）
     function switchMode(mode) {
       document.getElementById('buMode').classList.add('hidden');
@@ -172,76 +224,128 @@
       return diff;
     }
 
-    // 補登模式：末五碼 + 99
-    function calculateBu() {
-      const front8 = document.getElementById('bu_front8').value.trim();
-      const five = Number(document.getElementById('bu_barcode').value);
-      const m1 = Number(document.getElementById('bu_month1').value);
-      const d1 = Number(document.getElementById('bu_day1').value);
-      const m2 = Number(document.getElementById('bu_month2').value);
-      const d2 = Number(document.getElementById('bu_day2').value);
-
-      const diff = calculateDayDiff(2025, m1, d1, m2, d2);
-      if (diff < 0) {
-        document.getElementById('result').innerText = '❗ 補登日期必須晚於原始日期';
-        // 清空條碼圖
-        document.getElementById('barcode').innerHTML = '';
-        return;
+    // 驗證月份（1-12）
+    function validateMonth(input) {
+      input.value = input.value.replace(/[^0-9]/g, '');
+      const value = parseInt(input.value);
+      if (value > 12) {
+        input.value = '12';
       }
-      // 計算新的時控末五碼（只 +99，不論差幾天都只加一次）
-      const newFive = five + 99;
-      // 組成完整 13 碼條碼 (不含檢查碼)
-      const fullBarcode = front8 + String(newFive).padStart(5, '0');
+    }
 
-      document.getElementById('result').innerText =
-        `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
+    // 驗證日期（1-31）
+    function validateDay(input) {
+      input.value = input.value.replace(/[^0-9]/g, '');
+      const value = parseInt(input.value);
+      if (value > 31) {
+        input.value = '31';
+      }
+    }
 
-      // 用 JSBarcode 生成條碼圖（格式用 CODE128）
-      JsBarcode("#barcode", fullBarcode, {
-        format: "ean13", // 用 CODE128 能夠產生任意長度的數字條碼
-        lineColor: "#000",
-        width: 2,
-        height: 80,
-        displayValue: true
-      });
+    // 補登模式：末五碼 + 99
+    async function calculateBu() {
+      try {
+        showLoading();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const front8 = document.getElementById('bu_front8').value.trim();
+        if (front8.length !== 8) {
+          document.getElementById('result').innerText = '❗ 商品身份碼必須為 8 碼';
+          return;
+        }
+        
+        const five = document.getElementById('bu_barcode').value;
+        if (five.length !== 5) {
+          document.getElementById('result').innerText = '❗ 條碼末五碼必須為 5 碼';
+          return;
+        }
+        
+        const m1 = Number(document.getElementById('bu_month1').value);
+        const d1 = Number(document.getElementById('bu_day1').value);
+        const m2 = Number(document.getElementById('bu_month2').value);
+        const d2 = Number(document.getElementById('bu_day2').value);
+
+        const diff = calculateDayDiff(2025, m1, d1, m2, d2);
+        if (diff < 0) {
+          document.getElementById('result').innerText = '❗ 補登日期必須晚於原始日期';
+          // 清空條碼圖
+          document.getElementById('barcode').innerHTML = '';
+          return;
+        }
+        // 計算新的時控末五碼（只 +99，不論差幾天都只加一次）
+        const newFive = five + 99;
+        // 組成完整 13 碼條碼 (不含檢查碼)
+        const fullBarcode = front8 + String(newFive).padStart(5, '0');
+
+        document.getElementById('result').innerText =
+          `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
+
+        // 用 JSBarcode 生成條碼圖（格式用 CODE128）
+        JsBarcode("#barcode", fullBarcode, {
+          format: "ean13", // 用 CODE128 能夠產生任意長度的數字條碼
+          lineColor: "#000",
+          width: 2,
+          height: 80,
+          displayValue: true
+        });
+      } finally {
+        hideLoading();
+      }
     }
 
     // 提前結帳模式：末五碼 - 99 × (天數差 - 1)
-    function calculateTi() {
-      const front8 = document.getElementById('ti_front8').value.trim();
-      const five = Number(document.getElementById('ti_barcode').value);
-      const mA = Number(document.getElementById('ti_month1').value);
-      const dA = Number(document.getElementById('ti_day1').value);
-      const mB = Number(document.getElementById('ti_month2').value);
-      const dB = Number(document.getElementById('ti_day2').value);
-      const cutoff = Number(document.getElementById('ti_cutoff').value); // 取得日界線
+    async function calculateTi() {
+      try {
+        showLoading();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const front8 = document.getElementById('ti_front8').value.trim();
+        if (front8.length !== 8) {
+          document.getElementById('result').innerText = '❗ 商品身份碼必須為 8 碼';
+          return;
+        }
+        
+        const five = document.getElementById('ti_barcode').value;
+        if (five.length !== 5) {
+          document.getElementById('result').innerText = '❗ 條碼末五碼必須為 5 碼';
+          return;
+        }
+        
+        const mA = Number(document.getElementById('ti_month1').value);
+        const dA = Number(document.getElementById('ti_day1').value);
+        const mB = Number(document.getElementById('ti_month2').value);
+        const dB = Number(document.getElementById('ti_day2').value);
+        const cutoff = Number(document.getElementById('ti_cutoff').value); // 取得日界線
 
-      // 根據日界線建立日期物件
-      const dateA = new Date(2025, mA - 1, dA, cutoff, 0, 0);
-      const dateB = new Date(2025, mB - 1, dB, cutoff, 0, 0);
-      let diff = Math.round((dateA - dateB) / (1000 * 60 * 60 * 24));
-      diff = Math.abs(diff); // 保證正值
-      if (cutoff === 0) {
-        diff = diff - 1; // 00:00 日界線要再減 1
+        // 根據日界線建立日期物件
+        const dateA = new Date(2025, mA - 1, dA, cutoff, 0, 0);
+        const dateB = new Date(2025, mB - 1, dB, cutoff, 0, 0);
+        let diff = Math.round((dateA - dateB) / (1000 * 60 * 60 * 24));
+        diff = Math.abs(diff); // 保證正值
+        if (cutoff === 0) {
+          diff = diff - 1; // 00:00 日界線要再減 1
+        }
+        if (diff < 1) {
+          document.getElementById('result').innerText = '❗ 結帳日期必須早於條碼日期';
+          document.getElementById('barcode').innerHTML = '';
+          return;
+        }
+        const newFive = five - 99 * (diff - 1);
+        const fullBarcode = front8 + String(newFive).padStart(5, '0');
+
+        document.getElementById('result').innerText =
+          `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
+
+        JsBarcode("#barcode", fullBarcode, {
+          format: "ean13",
+          lineColor: "#000",
+          width: 2,
+          height: 80,
+          displayValue: true
+        });
+      } finally {
+        hideLoading();
       }
-      if (diff < 1) {
-        document.getElementById('result').innerText = '❗ 結帳日期必須早於條碼日期';
-        document.getElementById('barcode').innerHTML = '';
-        return;
-      }
-      const newFive = five - 99 * (diff - 1);
-      const fullBarcode = front8 + String(newFive).padStart(5, '0');
-
-      document.getElementById('result').innerText =
-        `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
-
-      JsBarcode("#barcode", fullBarcode, {
-        format: "ean13",
-        lineColor: "#000",
-        width: 2,
-        height: 80,
-        displayValue: true
-      });
     }
 
     // 日界線切換
