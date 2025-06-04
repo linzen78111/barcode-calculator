@@ -3,69 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>i珍食折扣條碼計算機</title>
+  <title>i珍食折扣條碼計算</title>
   <!-- 1. 引入 JSBarcode 函式庫（用來動態產生條碼圖） -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
+    :root {
+      --bg-color: #f5f5f7;
+      --text-color: #333;
+      --input-bg: white;
+      --input-border: #ccc;
+      --error-bg: #fff2f2;
+      --error-border: #ffcdd2;
+      --error-text: #d32f2f;
+      --button-bg: #007aff;
+      --button-text: white;
+      --card-bg: white;
+      --card-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e0e0e0;
+        --input-bg: #2d2d2d;
+        --input-border: #404040;
+        --error-bg: #3d1f1f;
+        --error-border: #5c2b2b;
+        --error-text: #ff6b6b;
+        --button-bg: #0a84ff;
+        --button-text: white;
+        --card-bg: #2d2d2d;
+        --card-shadow: 0 0 5px rgba(0,0,0,0.3);
+      }
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f5f5f7;
+      background: var(--bg-color);
       padding: 20px;
       max-width: 500px;
       margin: auto;
-      color: #333;
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
     }
+
     h2 {
       text-align: center;
       margin-bottom: 10px;
     }
+
     .mode-toggle {
       display: flex;
       justify-content: center;
       gap: 10px;
       margin: 20px 0;
     }
+
     button {
       padding: 10px 15px;
       font-size: 1em;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      background: var(--button-bg);
+      color: var(--button-text);
+      transition: opacity 0.2s;
     }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
     .active {
-      background-color: #007aff;
-      color: white;
+      background-color: var(--button-bg);
+      color: var(--button-text);
     }
+
     .hidden {
       display: none;
     }
+
     label {
       font-weight: 600;
       margin-top: 10px;
       display: block;
     }
+
     input {
       width: 100%;
       padding: 10px;
       font-size: 1.1em;
       margin-top: 5px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--input-border);
       border-radius: 6px;
       box-sizing: border-box;
+      background: var(--input-bg);
+      color: var(--text-color);
+      transition: border-color 0.3s, background-color 0.3s, color 0.3s;
     }
+
+    input:focus {
+      outline: none;
+      border-color: var(--button-bg);
+    }
+
+    input.error {
+      border-color: var(--error-text);
+      background: var(--error-bg);
+    }
+
     #result {
-      background: white;
+      background: var(--card-bg);
       margin-top: 20px;
       padding: 15px;
       border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      box-shadow: var(--card-shadow);
       font-size: 1.1em;
       white-space: pre-wrap;
+      transition: background-color 0.3s, box-shadow 0.3s;
     }
+
+    #result.error {
+      border: 1px solid var(--error-border);
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
     #barcodeWrapper {
       text-align: center;
       margin-top: 20px;
     }
+
     /* 載入動畫樣式 */
     .loading-overlay {
       position: fixed;
@@ -73,20 +141,21 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       justify-content: center;
       align-items: center;
       z-index: 1000;
     }
+
     .loading-text {
-      color: #333;
+      color: white;
       font-size: 1.2em;
       font-weight: 600;
       padding: 15px 30px;
-      background: white;
+      background: rgba(0, 0, 0, 0.8);
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
   </style>
 </head>
@@ -95,7 +164,7 @@
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-text">資料處理中...</div>
   </div>
-  <h2>i珍食折扣條碼計算機</h2>
+  <h2>i珍食折扣條碼計算</h2>
 
   <!-- 2. 模式切換按鈕 -->
   <div class="mode-toggle">
@@ -242,21 +311,36 @@
       }
     }
 
+    // 顯示錯誤訊息
+    function showError(message) {
+      const result = document.getElementById('result');
+      result.innerText = `❗ ${message}`;
+      result.classList.add('error');
+      document.getElementById('barcode').innerHTML = '';
+    }
+
+    // 清除錯誤狀態
+    function clearError() {
+      const result = document.getElementById('result');
+      result.classList.remove('error');
+    }
+
     // 補登模式：末五碼 + 99
     async function calculateBu() {
       try {
+        clearError();
         showLoading();
         await new Promise(resolve => setTimeout(resolve, 300));
         
         const front8 = document.getElementById('bu_front8').value.trim();
         if (front8.length !== 8) {
-          document.getElementById('result').innerText = '❗ 商品身份碼必須為 8 碼';
+          showError('商品身份碼必須為 8 碼');
           return;
         }
         
         const five = document.getElementById('bu_barcode').value;
         if (five.length !== 5) {
-          document.getElementById('result').innerText = '❗ 條碼末五碼必須為 5 碼';
+          showError('條碼末五碼必須為 5 碼');
           return;
         }
 
@@ -267,31 +351,24 @@
 
         const diff = calculateDayDiff(2025, m1, d1, m2, d2);
         if (diff < 0) {
-          document.getElementById('result').innerText = '❗ 補登日期必須晚於原始日期';
-          document.getElementById('barcode').innerHTML = '';
+          showError('補登日期必須晚於原始日期');
           return;
         }
 
-        // 修正：確保 five 是數字，並且正確處理末五碼
         const fiveNum = parseInt(five);
         const newFive = fiveNum + 99;
-        // 確保新末五碼不超過 5 位數
         if (newFive > 99999) {
-          document.getElementById('result').innerText = '❗ 計算結果超出範圍';
-          document.getElementById('barcode').innerHTML = '';
+          showError('計算結果超出範圍');
           return;
         }
         
-        // 組成完整 13 碼條碼 (不含檢查碼)
         const fullBarcode = front8 + String(newFive).padStart(5, '0');
-
         document.getElementById('result').innerText =
           `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${String(newFive).padStart(5, '0')}\n✅ 完整條碼：${fullBarcode}`;
 
-        // 用 JSBarcode 生成條碼圖
         JsBarcode("#barcode", fullBarcode, {
           format: "ean13",
-          lineColor: "#000",
+          lineColor: var(--text-color),
           width: 2,
           height: 80,
           displayValue: true
@@ -304,49 +381,54 @@
     // 提前結帳模式：末五碼 - 99 × (天數差 - 1)
     async function calculateTi() {
       try {
+        clearError();
         showLoading();
         await new Promise(resolve => setTimeout(resolve, 300));
         
         const front8 = document.getElementById('ti_front8').value.trim();
         if (front8.length !== 8) {
-          document.getElementById('result').innerText = '❗ 商品身份碼必須為 8 碼';
+          showError('商品身份碼必須為 8 碼');
           return;
         }
         
         const five = document.getElementById('ti_barcode').value;
         if (five.length !== 5) {
-          document.getElementById('result').innerText = '❗ 條碼末五碼必須為 5 碼';
+          showError('條碼末五碼必須為 5 碼');
           return;
         }
-        
+
         const mA = Number(document.getElementById('ti_month1').value);
         const dA = Number(document.getElementById('ti_day1').value);
         const mB = Number(document.getElementById('ti_month2').value);
         const dB = Number(document.getElementById('ti_day2').value);
-        const cutoff = Number(document.getElementById('ti_cutoff').value); // 取得日界線
+        const cutoff = Number(document.getElementById('ti_cutoff').value);
 
-        // 根據日界線建立日期物件
         const dateA = new Date(2025, mA - 1, dA, cutoff, 0, 0);
         const dateB = new Date(2025, mB - 1, dB, cutoff, 0, 0);
         let diff = Math.round((dateA - dateB) / (1000 * 60 * 60 * 24));
-        diff = Math.abs(diff); // 保證正值
+        diff = Math.abs(diff);
         if (cutoff === 0) {
-          diff = diff - 1; // 00:00 日界線要再減 1
+          diff = diff - 1;
         }
         if (diff < 1) {
-          document.getElementById('result').innerText = '❗ 結帳日期必須早於條碼日期';
-          document.getElementById('barcode').innerHTML = '';
+          showError('結帳日期必須早於條碼日期');
           return;
         }
-        const newFive = five - 99 * (diff - 1);
-        const fullBarcode = front8 + String(newFive).padStart(5, '0');
 
+        const fiveNum = parseInt(five);
+        const newFive = fiveNum - 99 * (diff - 1);
+        if (newFive < 0 || newFive > 99999) {
+          showError('計算結果超出範圍');
+          return;
+        }
+
+        const fullBarcode = front8 + String(newFive).padStart(5, '0');
         document.getElementById('result').innerText =
-          `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
+          `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${String(newFive).padStart(5, '0')}\n✅ 完整條碼：${fullBarcode}`;
 
         JsBarcode("#barcode", fullBarcode, {
           format: "ean13",
-          lineColor: "#000",
+          lineColor: var(--text-color),
           width: 2,
           height: 80,
           displayValue: true
