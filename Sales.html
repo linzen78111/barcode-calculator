@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>i珍食折扣條碼計算</title>
+  <title>i珍食折扣條碼計算機</title>
   <!-- 1. 引入 JSBarcode 函式庫（用來動態產生條碼圖） -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
@@ -164,7 +164,7 @@
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-text">資料處理中...</div>
   </div>
-  <h2>i珍食折扣條碼計算</h2>
+  <h2>i珍食折扣條碼計算機</h2>
 
   <!-- 2. 模式切換按鈕 -->
   <div class="mode-toggle">
@@ -366,9 +366,12 @@
         document.getElementById('result').innerText =
           `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${String(newFive).padStart(5, '0')}\n✅ 完整條碼：${fullBarcode}`;
 
+        // 獲取當前主題的文字顏色
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim();
+        
         JsBarcode("#barcode", fullBarcode, {
           format: "ean13",
-          lineColor: var(--text-color),
+          lineColor: textColor,
           width: 2,
           height: 80,
           displayValue: true
@@ -426,9 +429,12 @@
         document.getElementById('result').innerText =
           `⏩ 提前結帳模式\n✅ 原始末五碼：${five}\n✅ 天數差：${diff}\n✅ 新末五碼：${String(newFive).padStart(5, '0')}\n✅ 完整條碼：${fullBarcode}`;
 
+        // 獲取當前主題的文字顏色
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim();
+        
         JsBarcode("#barcode", fullBarcode, {
           format: "ean13",
-          lineColor: var(--text-color),
+          lineColor: textColor,
           width: 2,
           height: 80,
           displayValue: true
