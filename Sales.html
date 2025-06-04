@@ -259,7 +259,7 @@
           document.getElementById('result').innerText = '❗ 條碼末五碼必須為 5 碼';
           return;
         }
-        
+
         const m1 = Number(document.getElementById('bu_month1').value);
         const d1 = Number(document.getElementById('bu_day1').value);
         const m2 = Number(document.getElementById('bu_month2').value);
@@ -268,21 +268,29 @@
         const diff = calculateDayDiff(2025, m1, d1, m2, d2);
         if (diff < 0) {
           document.getElementById('result').innerText = '❗ 補登日期必須晚於原始日期';
-          // 清空條碼圖
           document.getElementById('barcode').innerHTML = '';
           return;
         }
-        // 計算新的時控末五碼（只 +99，不論差幾天都只加一次）
-        const newFive = five + 99;
+
+        // 修正：確保 five 是數字，並且正確處理末五碼
+        const fiveNum = parseInt(five);
+        const newFive = fiveNum + 99;
+        // 確保新末五碼不超過 5 位數
+        if (newFive > 99999) {
+          document.getElementById('result').innerText = '❗ 計算結果超出範圍';
+          document.getElementById('barcode').innerHTML = '';
+          return;
+        }
+        
         // 組成完整 13 碼條碼 (不含檢查碼)
         const fullBarcode = front8 + String(newFive).padStart(5, '0');
 
         document.getElementById('result').innerText =
-          `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${newFive}\n✅ 完整條碼：${fullBarcode}`;
+          `🔁 補登模式\n✅ 原始末五碼：${five}\n✅ 新末五碼：${String(newFive).padStart(5, '0')}\n✅ 完整條碼：${fullBarcode}`;
 
-        // 用 JSBarcode 生成條碼圖（格式用 CODE128）
+        // 用 JSBarcode 生成條碼圖
         JsBarcode("#barcode", fullBarcode, {
-          format: "ean13", // 用 CODE128 能夠產生任意長度的數字條碼
+          format: "ean13",
           lineColor: "#000",
           width: 2,
           height: 80,
